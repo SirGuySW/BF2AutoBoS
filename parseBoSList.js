@@ -8,7 +8,7 @@ var events = require('events');
 **/
 function bosListReader() {
 	$bosListReader = this;
-	fs.readFile(settings.BoSList.path, settings.BoSList.encoding, function(err, data) {
+	fs.readFile(settings.BoSList.PATH, settings.BoSList.ENCODING, function(err, data) {
 		if(err) throw err;
 		parseList(data);
 	});
@@ -24,11 +24,22 @@ function bosListReader() {
 	function parseList(list) {
 		var bosList = [];
 		list.replace("\r\n","\n").split("\n").forEach(function(row) {
-			row = row.trim().split(settings.BoSList.delimiter);
+			row = row.trim().split(settings.BoSList.DELIMITER);
 			bosList.push({ name: row[0], ip: row[1]});
 		});
-		console.log("BoSList parsed!");
-		$bosListReader.emit('BoSListConversionCompleted', bosList);
+		bosList.sort(function(a,b) {			//Sorts the boslist in lexi order by BoS name;
+			if(a.name > b.name) return 1;
+			if(a.name < b.name) return -1;
+			return 0;
+		});
+		var bosListByIP = bosList.slice(0);		//Clone the bolist;	
+		bosListByIP.sort(function(a,b) {		//Sorts this clone in lexi order by BoS IP;
+			if(a.ip > b.ip) return 1;
+			if(a.ip < b.ip) return -1;
+			return 0;
+		});
+		console.log("BoSList parsed! BoS Records: " + bosList.length);
+		$bosListReader.emit('BoSListConversionCompleted', bosList, bosListByIP);
 	}
 }
 util.inherits(bosListReader, events.EventEmitter);
