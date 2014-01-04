@@ -30,18 +30,12 @@ bosListReader.once("BoSListConversionCompleted", function(listByName, listByIP) 
  * to repeat after the specified time. Illegal name checking coming soon.
 **/
 function autoBoSLoop() {
-	gameWrapper.listPlayersFormatted(function(playerList) {
+	gameWrapper.listPlayersFormatted(function(playerList) {		//Get player list from server;
 		playerList.forEach(function(row) {
 			if(!isNameIgnored(row.name)) {						//If this player is already being handled by an earlier check skip it so we don't w/k/b it twice;
 				if(checkAgainstBoSList(row.name, row.ip)) {		//Check if this player is on the BoS List;
 					ignoreForNow.push(row.name);				//Mark this player as 'being handled' so we can ignore it on the next check (if it's still on the server by then);
 					banPlayer(row.id, row.name, row.ip, settings.messages.BOS_BAN_NOTICE);	//If this player is BoS remove it from the server;
-				}
-				else {											//If it's not BoS...;
-					if(checkForIllegalName(row.name)) {			//Check if player has an inappropriate name;
-						ignoreForNow.push(row.name);			//Mark this player as 'being handled' so we can ignore it on the next check (if it's still on the server by then);
-						kickPlayer(row.id, row.name, row.ip, settings.messages.ILLEGAL_NAME_NOTICE);	//Player has an inappropriate name (orange text, swearing, etc.) remove them from the server;
-					}
 				}
 			}
 		});
@@ -68,19 +62,6 @@ function checkAgainstBoSList(name, ip) {
 		return true;												//IP was found. Report results. This implies that the name was not found so we should add it to the list (NYI);
 	}
 	return false;
-}
-
-/**
- * (NYI) Not yet implemented. Should load illegal 'phrases' from file. Names containing the phrases shouldn't be allowed. (similar to banned words).
-**/
-function checkForIllegalName(name) {
-	if(name==="InappropriateName") {
-		console.log("NAME VIOLATION! " + name);
-		return true;
-	}
-	else {
-		return false;
-	}
 }
 
 /**
