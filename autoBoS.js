@@ -54,14 +54,92 @@ function checkAgainstBoSList(name, ip) {
 	var location = binarySearcher.find(bosListByName, name, true);	//Search for the name in the boslist;
 	if(location > -1) {												//Function will return index of the name in the sorted boslist(not guarenteed to be the first occurance of this name);
 		console.log("NAME: \"" + name + ":" + ip + "\" = \"" + bosListByName[location].name + ":" + bosListByName[location].ip + "\" (BoS row: " + location + ").");
-		return true;												//Name was found. Report results;
+		if(settings.general.CONFIRM_NEW_IP_EXISTS) {					//Name found. Need to make sure the current IP is attached to the name in the list;
+			handleExistCheck(bosListByName, name, ip, location, false);
+		}
+		return true;
 	}
-	location = binarySearcher.find(bosListByIP, ip, false);			//Name not found in BoSlist. Search for the IP instead;
-	if(location > -1) {
-		console.log("IP: \"" + name + ":" + ip + "\" = \"" + bosListByIP[location].name + ":" + bosListByIP[location].ip + "\" (BoS row: " + location + ").");
-		return true;												//IP was found. Report results. This implies that the name was not found so we should add it to the list (NYI);
+	if(settings.general.CHECK_FOR_BAD_IPS) {
+		location = binarySearcher.find(bosListByIP, ip, false);			//Name not found in BoSlist. Search for the IP instead;
+		if(location > -1) {
+			console.log("IP: \"" + name + ":" + ip + "\" = \"" + bosListByIP[location].name + ":" + bosListByIP[location].ip + "\" (BoS row: " + location + ").");
+			if(settings.general.CONFIRM_NEW_NAME_EXISTS) {				//IP found. Need to make sure the current Name is attached to the IP in the list;
+				handleExistCheck(bosListByIP, name, ip, location, true);
+			}
+			return true;												//IP was found. Report results. This implies that the name was not found so we should add it to the list (NYI);
+		}
 	}
 	return false;
+}
+
+/**
+ * This function manages the below confirmExists function.
+**/
+function handleExistCheck(bosList, name, ip, location, byName) {
+	//if(byName) {
+		//It's a bit pointless to *check* if the name doesn't exist since this only runs when searching by IP (which only occurs if the players name is not found in the boslist). So the players name should never be found in this step and it will always return false;
+		//So, to save the cpu doing a needless search we just hard code it into the below if-statement;
+	//} else
+	if(!byName && confirmExists(bosList, name, ip, location, byName)) {
+		console.log((byName ? 'name' : 'ip') + ' exists: ' + name + ":" + ip);//IP/name exists and is attached to the name/ip in question, no further action needed;
+	}
+	else {
+		console.log((byName ? 'name' : 'ip') + ' does NOT exist: ' + name + ":" + ip);//IP/name isn't attached to this BoS name/ip. Add new BoS entry with this name + ip;
+	}
+}
+
+/**
+ * This function handles searching the BoS list for a name/ip match.
+ * For example: If the BoS player 'BadGuy' logs in with ip 192.168.1.1
+ * this function will confirm that we have a record for BadGuy logging
+ * in from ip 192.168.1.1. If we do this function returns true. If not
+ * this function returns false. This function will also confirm that 
+ * we have a name on record corresponding to a BoS IP, however, in this
+ * program that case should always return false (because BoS name is
+ * checked before IP).
+**/
+function confirmExists(bosList, name, ip, location, byName) {
+	var direction = -1;
+	var done;
+	var searchLoc = location;
+	for(var i=0;i<2;i++) {
+		done = false;
+		if(i === 1) {
+			direction = 1;
+			searchLoc = location + direction;
+		}
+		if(!byName) {
+			while(!done) {
+				if(searchLoc >= 0 && searchLoc <= bosList.length && bosList[searchLoc].name === name) {	//Ensure the name in the list is the name we're checking;
+					if(bosList[searchLoc].ip === ip) {					//If the IP for this record matches the IP we're checking return true;
+						return true;
+					}
+					else {
+						searchLoc += direction;							//Otherwise increment to the next record and try again;
+					}
+				}
+				else {													//Name doesn't match, we went too far;
+					done = true;
+				}
+			}
+		}
+		else {
+			while(!done) {
+				if(searchLoc >= 0 && searchLoc <= bosList.length && bosList[searchLoc].ip === ip) {	//Ensure the ip in the list is the ip we're checking;
+					if(bosList[searchLoc].name === name) {					//If the name for this record matches the name we're checking return true;
+						return true;
+					}
+					else {
+						searchLoc += direction;							//Otherwise increment to the next record and try again;
+					}
+				}
+				else {													//ip doesn't match, we went too far;
+					done = true;
+				}
+			}
+		}
+	}
+	return false;													//The ip/name is not matched with the name/ip in the BoS list. Report results;
 }
 
 /**
