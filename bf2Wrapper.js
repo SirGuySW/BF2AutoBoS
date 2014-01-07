@@ -27,7 +27,7 @@ bf2Wrapper.prototype.sendServerMessage = function(message, callBack) {
 	console.log("Sending message: " + message);
 	this.rcon.send('exec game.sayAll "' + message + '"', function(data){
 		//console.log(data.toString());
-		callBack();
+		callBack(message);
 	});
 }
 
